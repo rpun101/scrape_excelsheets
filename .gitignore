@@ -1,0 +1,66 @@
+## .NET Core build artifacts
+bin/
+obj/
+
+## NuGet packages
+*.nupkg
+*.snupkg
+.nuget/
+
+## Visual Studio / VS Code
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vscode/
+*.code-workspace
+
+## Rider
+.idea/
+*.sln.iml
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+## ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+## Publish
+publish/
+PublishProfiles/
+
+## Entity Framework
+*.mdf
+*.ldf
+*.ndf
+*.edmx.diagram
+migration_output.txt
+
+## Rider
+*.DotSettings.user
+
+## OS files
+.DS_Store
+Thumbs.db
+
+## dotnet test / coverage
+*.trx
+*.coveragexml
+coverage/
+TestResults/
+
+## Temporary files
+*.tmp
+*.temp

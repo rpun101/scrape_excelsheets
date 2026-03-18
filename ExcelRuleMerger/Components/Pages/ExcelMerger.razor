@@ -1,0 +1,377 @@
+@page "/excel-merger"
+@using ExcelRuleMerger.Services
+@inject ExcelMergerService MergerService
+@inject IJSRuntime JS
+
+<PageTitle>Excel Rule Merger</PageTitle>
+
+<div class="container-fluid py-4">
+    <h1 class="mb-1">
+        <span class="text-success">&#x1F4CA;</span> Excel Rule Merger
+    </h1>
+    <p class="text-muted mb-4">Upload an Excel workbook, configure filter rules, and download a merged output.</p>
+
+    @if (!string.IsNullOrEmpty(_globalError))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error:</strong> @_globalError
+            <button type="button" class="btn-close" @onclick="() => _globalError = null" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- Left column: options -->
+        <div class="col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold bg-success text-white">1. Upload &amp; Configure</div>
+                <div class="card-body">
+
+                    <!-- File upload -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Excel File (.xlsx)</label>
+                        <InputFile OnChange="OnFileSelected" accept=".xlsx" class="form-control" />
+                        @if (_fileName != null)
+                        {
+                            <div class="form-text text-success">&#x2713; @_fileName</div>
+                        }
+                        @if (_fileError != null)
+                        {
+                            <div class="form-text text-danger">@_fileError</div>
+                        }
+                    </div>
+
+                    <hr />
+
+                    <!-- Sheet selection -->
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="allSheets"
+                                   @bind="_options.IncludeAllSheets" />
+                            <label class="form-check-label fw-semibold" for="allSheets">Include all sheets</label>
+                        </div>
+                        @if (!_options.IncludeAllSheets)
+                        {
+                            <div class="mt-2">
+                                <label class="form-label">Specific sheets (comma-separated)</label>
+                                <input type="text" class="form-control" placeholder="Sheet1, Sheet2, ..."
+                                       @bind="_options.SpecificSheets" />
+                            </div>
+                        }
+                    </div>
+
+                    <hr />
+
+                    <!-- Mode selector -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Processing Mode</label>
+                        <select class="form-select" @bind="_modeString">
+                            <option value="BetweenMarkers">Between Markers</option>
+                            <option value="FilterEquals">Filter Equals</option>
+                            <option value="DateRange">Date Range</option>
+                        </select>
+                    </div>
+
+                    <!-- Mode-specific fields -->
+                    @if (_options.Mode == MergeMode.BetweenMarkers)
+                    {
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <div class="mb-2">
+                                <label class="form-label">Marker Column</label>
+                                <input type="text" class="form-control" placeholder="e.g. Section"
+                                       @bind="_options.MarkerColumn" />
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Start Marker (text to find)</label>
+                                <input type="text" class="form-control" placeholder="e.g. such and such"
+                                       @bind="_options.StartMarker" />
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">End Marker (text to find)</label>
+                                <input type="text" class="form-control" placeholder="e.g. value"
+                                       @bind="_options.EndMarker" />
+                            </div>
+                            <div class="form-check mb-1">
+                                <input class="form-check-input" type="checkbox" id="inclStart"
+                                       @bind="_options.IncludeStartRow" />
+                                <label class="form-check-label" for="inclStart">Include start row</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="inclEnd"
+                                       @bind="_options.IncludeEndRow" />
+                                <label class="form-check-label" for="inclEnd">Include end row</label>
+                            </div>
+                        </div>
+                    }
+                    else if (_options.Mode == MergeMode.FilterEquals)
+                    {
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <div class="mb-2">
+                                <label class="form-label">Filter Column</label>
+                                <input type="text" class="form-control" placeholder="e.g. Status"
+                                       @bind="_options.FilterColumn" />
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Filter Value</label>
+                                <input type="text" class="form-control" placeholder="e.g. Approved"
+                                       @bind="_options.FilterValue" />
+                            </div>
+                        </div>
+                    }
+                    else if (_options.Mode == MergeMode.DateRange)
+                    {
+                        <div class="border rounded p-3 mb-3 bg-light">
+                            <div class="mb-2">
+                                <label class="form-label">Date Column <span class="text-muted">(leave blank to auto-detect)</span></label>
+                                <input type="text" class="form-control" placeholder="e.g. Date or Transaction Date"
+                                       @bind="_options.DateColumn" />
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Start Date (YYYY-MM-DD)</label>
+                                <input type="date" class="form-control" @bind="_startDateInput" @bind:format="yyyy-MM-dd" />
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">End Date (YYYY-MM-DD)</label>
+                                <input type="date" class="form-control" @bind="_endDateInput" @bind:format="yyyy-MM-dd" />
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="dayFirst"
+                                       @bind="_options.DayFirst" />
+                                <label class="form-check-label" for="dayFirst">Day-first date parsing (DD/MM/YYYY)</label>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Date column regex patterns -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Date Column Detection Patterns
+                            <small class="text-muted">(one regex per line)</small>
+                        </label>
+                        <textarea class="form-control font-monospace" rows="5"
+                                  @bind="_options.DateColumnPatterns" style="font-size:0.8rem;"></textarea>
+                    </div>
+
+                    <hr />
+
+                    <!-- Output format -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Output Format</label>
+                        <select class="form-select" @bind="_outputFormatString">
+                            <option value="Xlsx">Excel (.xlsx)</option>
+                            <option value="Csv">CSV (.csv)</option>
+                        </select>
+                    </div>
+
+                    <!-- Source sheet column -->
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="sourceCol"
+                                   @bind="_options.AddSourceSheetColumn" />
+                            <label class="form-check-label fw-semibold" for="sourceCol">Append source sheet column</label>
+                        </div>
+                        @if (_options.AddSourceSheetColumn)
+                        {
+                            <div class="mt-2">
+                                <label class="form-label">Source sheet column name</label>
+                                <input type="text" class="form-control" @bind="_options.SourceSheetColumnName" />
+                            </div>
+                        }
+                    </div>
+
+                    <div class="d-grid mt-3">
+                        <button class="btn btn-success btn-lg" @onclick="ProcessFile" disabled="@(_processing || _fileBytes == null)">
+                            @if (_processing)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                <span>Processing...</span>
+                            }
+                            else
+                            {
+                                <span>&#x2699;&#xFE0F; Process &amp; Download</span>
+                            }
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Right column: results/logs -->
+        <div class="col-lg-7">
+            @if (_result != null)
+            {
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header fw-semibold bg-primary text-white">2. Results</div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="text-center">
+                                <div class="fs-3 fw-bold text-success">@_result.TotalRows</div>
+                                <div class="small text-muted">Total Rows</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="fs-3 fw-bold text-primary">@_result.Logs.Count(l => l.Success)</div>
+                                <div class="small text-muted">Sheets OK</div>
+                            </div>
+                            @if (_result.Logs.Any(l => !l.Success))
+                            {
+                                <div class="text-center">
+                                    <div class="fs-3 fw-bold text-danger">@_result.Logs.Count(l => !l.Success)</div>
+                                    <div class="small text-muted">Sheets Failed</div>
+                                </div>
+                            }
+                        </div>
+
+                        <button class="btn btn-outline-success w-100 mb-3" @onclick="DownloadResult">
+                            &#x2B07;&#xFE0F; Download @_result.FileName
+                        </button>
+
+                        <h6 class="fw-semibold mt-3">Per-Sheet Processing Log</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Sheet</th>
+                                        <th>Status</th>
+                                        <th>Rows</th>
+                                        <th>Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var log in _result.Logs)
+                                    {
+                                        <tr>
+                                            <td>@log.SheetName</td>
+                                            <td>
+                                                @if (log.Success)
+                                                {
+                                                    <span class="badge bg-success">OK</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">Error</span>
+                                                }
+                                            </td>
+                                            <td>@(log.Success ? log.RowsExtracted.ToString() : "-")</td>
+                                            <td class="text-danger small">@log.ErrorMessage</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- How-to / help card -->
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold">&#x2139;&#xFE0F; How to Use</div>
+                <div class="card-body small">
+                    <ol class="mb-0">
+                        <li class="mb-1">Upload an <strong>.xlsx</strong> file containing one or more sheets.</li>
+                        <li class="mb-1">Choose which sheets to process (all or specific names).</li>
+                        <li class="mb-1">Select a <strong>processing mode</strong>:
+                            <ul class="mt-1">
+                                <li><strong>Between Markers</strong> — extract rows between two text values in a column.</li>
+                                <li><strong>Filter Equals</strong> — keep only rows where a column equals a value.</li>
+                                <li><strong>Date Range</strong> — keep rows where a date column falls in a range.</li>
+                            </ul>
+                        </li>
+                        <li class="mb-1">Fill in mode-specific fields.</li>
+                        <li class="mb-1">Optionally adjust date-column detection regex patterns.</li>
+                        <li class="mb-1">Choose output format (xlsx or csv).</li>
+                        <li>Click <strong>Process &amp; Download</strong>.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private MergeOptions _options = new();
+    private byte[]? _fileBytes;
+    private string? _fileName;
+    private string? _fileError;
+    private string? _globalError;
+    private bool _processing;
+    private MergeResult? _result;
+
+    private DateTime? _startDateInput;
+    private DateTime? _endDateInput;
+
+    private string _modeString
+    {
+        get => _options.Mode.ToString();
+        set => _options.Mode = Enum.TryParse<MergeMode>(value, out var m) ? m : MergeMode.BetweenMarkers;
+    }
+
+    private string _outputFormatString
+    {
+        get => _options.OutputFormat.ToString();
+        set => _options.OutputFormat = Enum.TryParse<OutputFormat>(value, out var f) ? f : OutputFormat.Xlsx;
+    }
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        _fileError = null;
+        _fileName = null;
+        _fileBytes = null;
+        _result = null;
+
+        var file = e.File;
+        if (!file.Name.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+        {
+            _fileError = "Only .xlsx files are supported.";
+            return;
+        }
+
+        const long maxSize = 50 * 1024 * 1024; // 50 MB
+        if (file.Size > maxSize)
+        {
+            _fileError = "File size exceeds the 50 MB limit.";
+            return;
+        }
+
+        using var ms = new MemoryStream();
+        await file.OpenReadStream(maxSize).CopyToAsync(ms);
+        _fileBytes = ms.ToArray();
+        _fileName = file.Name;
+    }
+
+    private async Task ProcessFile()
+    {
+        if (_fileBytes == null)
+        {
+            _globalError = "Please upload an Excel file first.";
+            return;
+        }
+
+        _globalError = null;
+        _result = null;
+        _processing = true;
+
+        // Apply date inputs
+        _options.StartDate = _startDateInput?.ToString("yyyy-MM-dd") ?? string.Empty;
+        _options.EndDate = _endDateInput?.ToString("yyyy-MM-dd") ?? string.Empty;
+
+        try
+        {
+            using var ms = new MemoryStream(_fileBytes);
+            _result = await MergerService.ProcessAsync(ms, _options);
+        }
+        catch (Exception ex)
+        {
+            _globalError = $"Processing failed: {ex.Message}";
+        }
+        finally
+        {
+            _processing = false;
+        }
+    }
+
+    private async Task DownloadResult()
+    {
+        if (_result == null || _result.FileBytes.Length == 0) return;
+        var base64 = Convert.ToBase64String(_result.FileBytes);
+        await JS.InvokeVoidAsync("downloadFile", _result.FileName, _result.ContentType, base64);
+    }
+}
