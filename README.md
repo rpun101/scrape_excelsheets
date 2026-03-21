@@ -19,6 +19,7 @@ A Streamlit web app that extracts specific row data from Excel files across mult
 
 - [ ] **Multiple file upload** — upload and process more than one workbook at a time; results merged into a single table
 - [ ] **Column display order** — a text area with comma-separated column/label names to control which columns are shown first in the results (e.g. enter `Cash, Cash (EBT)` to pin those to the left)
+- [ ] **Download as Pdf** - button to download result as pdf
 
 ## Requirements
 
