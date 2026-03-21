@@ -284,6 +284,14 @@ if "extracted_df" in st.session_state and st.session_state["extracted_df"] is no
     # Ensure all column names are plain strings
     result_df.columns = [str(c) for c in result_df.columns]
 
+    # Sort date columns chronologically; keep Row Label first, non-date cols last
+    date_col_order = sorted(
+        [c for c in result_df.columns if _parse_date_from_header(c)],
+        key=lambda c: _parse_date_from_header(c),
+    )
+    non_date_cols = [c for c in result_df.columns if c != "Row Label" and _parse_date_from_header(c) is None]
+    result_df = result_df[["Row Label"] + date_col_order + non_date_cols]
+
     st.subheader("Results")
 
     # Calculate height to show all rows
