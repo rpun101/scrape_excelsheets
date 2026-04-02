@@ -1,66 +1,44 @@
-## .NET Core build artifacts
-bin/
-obj/
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
 
-## NuGet packages
-*.nupkg
-*.snupkg
-.nuget/
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
 
-## Visual Studio / VS Code
-.vs/
-*.user
-*.suo
-*.userosscache
-*.sln.docstates
+# IDE
 .vscode/
+.idea/
+*.swp
+*.swo
+*~
 *.code-workspace
 
-## Rider
-.idea/
-*.sln.iml
-
-## Build results
-[Dd]ebug/
-[Rr]elease/
-x64/
-x86/
-[Ww][Ii][Nn]32/
-[Aa][Rr][Mm]/
-[Aa][Rr][Mm]64/
-bld/
-[Bb]in/
-[Oo]bj/
-[Ll]og/
-[Ll]ogs/
-
-## ASP.NET Scaffolding
-ScaffoldingReadMe.txt
-
-## Publish
-publish/
-PublishProfiles/
-
-## Entity Framework
-*.mdf
-*.ldf
-*.ndf
-*.edmx.diagram
-migration_output.txt
-
-## Rider
-*.DotSettings.user
-
-## OS files
+# OS files
 .DS_Store
 Thumbs.db
 
-## dotnet test / coverage
-*.trx
-*.coveragexml
-coverage/
-TestResults/
+# Streamlit
+.streamlit/secrets.toml
+.streamlit/cache/
 
-## Temporary files
-*.tmp
-*.temp
+# Environment variables
+.env
+.env.local
+
+# Misc
+.cache/
+*.log
+
+# Test/Upload files (uncomment if needed)
+# *.xlsx
+# *.xls
