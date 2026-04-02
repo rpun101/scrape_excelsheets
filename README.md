@@ -2,10 +2,44 @@
 
 A Streamlit web app that extracts specific row data from Excel files across multiple sheets.
 
+## How to run locally
+
+1. **Clone or download** this repository
+2. **Navigate** to the project folder:
+   ```bash
+   cd extract-excel-data
+   ```
+3. **Create a virtual environment**:
+   ```bash
+   python -m venv .venv
+   ```
+4. **Activate** the virtual environment:
+   - **Windows (PowerShell)**:
+     ```powershell
+     .venv\Scripts\Activate.ps1
+     ```
+   - **Windows (cmd)**:
+     ```cmd
+     .venv\Scripts\activate.bat
+     ```
+   - **macOS/Linux**:
+     ```bash
+     source .venv/bin/activate
+     ```
+5. **Install dependencies**:
+   ```bash
+   pip install -r extract_excel_data/requirements.txt
+   ```
+6. **Run the app**:
+   ```bash
+   streamlit run extract_excel_data/app.py
+   ```
+7. The app will open in your browser at `http://localhost:8501`
+
 ## Features
 
 - **Upload** `.xlsx` / `.xls` files
-- **Search by row label** — enter comma-separated labels (case-insensitive)
+- **Search by row label** — enter comma-separated labels (case-insensitive); results display in the same order as entered
 - **Auto-detects date columns** in the header row (e.g. `1/5/2025`, `2024-01-02`, `Mar 2024`)
 - **Optional extra columns** — specify additional column names to include
 - **Multi-sheet support** — scans every sheet; the same label can be at different row numbers in each sheet
@@ -18,8 +52,7 @@ A Streamlit web app that extracts specific row data from Excel files across mult
 ## TODO
 
 - [ ] **Multiple file upload** — upload and process more than one workbook at a time; results merged into a single table
-- [ ] **Column display order** — a text area with comma-separated column/label names to control which columns are shown first in the results (e.g. enter `Cash, Cash (EBT)` to pin those to the left)
-- [ ] **Download as Pdf** - button to download result as pdf
+- [ ] **Download as Pdf** — button to download result as pdf
 
 ## Requirements
 
@@ -34,21 +67,6 @@ A Streamlit web app that extracts specific row data from Excel files across mult
 | [pandas](https://pandas.pydata.org/) | Reads Excel workbooks, builds and filters the results `DataFrame` |
 | [openpyxl](https://openpyxl.readthedocs.io/) | Excel engine used by pandas to open `.xlsx` files and write the downloadable output |
 
-## Setup
-
-```bash
-cd extract_excel_data
-pip install -r requirements.txt
-```
-
-## Run
-
-```bash
-streamlit run app.py
-```
-
-The app opens in your browser at `http://localhost:8501`.
-
 ## How to Use
 
 1. **Upload** an Excel file using the file uploader.
@@ -56,10 +74,12 @@ The app opens in your browser at `http://localhost:8501`.
    - Example: `Wine, MOP Cash (Dollar), EBT Cash, MOP Credit`
    - Matching is **case-insensitive** and ignores leading `*` characters.
    - Whitespace around labels is trimmed automatically.
+   - **The order you enter determines the output order** — results will display rows in the same sequence.
 3. *(Optional)* **Enter extra column names** — any non-date columns you also want extracted (e.g. `Total`).
 4. Click the **Extract** button.
 5. **View results** in the on-page table.
-6. Click **Download results as Excel** to save the output.
+   - Use the **date range filter** to narrow visible columns by start/end date.
+6. Click **Copy Data** to copy as tab-separated values, or **Download as Excel** to save the output.
 
 ## How It Works
 
